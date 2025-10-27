@@ -1,0 +1,100 @@
+{
+  "name": "whatsapp-flows-server",
+  "version": "1.0.0",
+  "description": "Production-ready Node.js server for WhatsApp Flows with automated CI/CD, multi-arch Docker support, and DDD architecture",
+  "main": "dist/main.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:guilhermejansen/whatsapp-flows-server.git"
+  },
+  "homepage": "https://github.com/guilhermejansen/whatsapp-flows-server#readme",
+  "bugs": {
+    "url": "https://github.com/guilhermejansen/whatsapp-flows-server/issues",
+    "email": "guilherme@setupautomatizado.com.br"
+  },
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "generate-keys": "tsx scripts/generate-keys.ts",
+    "validate-keys": "tsx scripts/validate-keys.ts",
+    "register-key": "tsx scripts/register-public-key.ts",
+    "migrate": "tsx scripts/migrations/run-migrations.ts",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write 'src/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts'",
+    "prepare": "husky || true",
+    "commit": "git-cz"
+  },
+  "keywords": [
+    "whatsapp",
+    "whatsapp-flows",
+    "whatsapp-business",
+    "flows",
+    "node",
+    "typescript",
+    "ddd",
+    "domain-driven-design",
+    "express",
+    "postgresql",
+    "encryption",
+    "rsa",
+    "aes",
+    "webhook",
+    "ci-cd",
+    "docker",
+    "multi-arch"
+  ],
+  "author": {
+    "name": "Guilherme Jansen",
+    "email": "guilherme@setupautomatizado.com.br",
+    "url": "https://setupautomatizado.com.br"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.12.2",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "node-rsa": "^1.1.1",
+    "pg": "^8.16.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.18.3",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.0",
+    "@semantic-release/npm": "^13.1.1",
+    "@semantic-release/release-notes-generator": "^14.1.0",
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.4",
+    "@types/node": "^20.10.0",
+    "@types/node-rsa": "^1.1.4",
+    "@types/pg": "^8.15.5",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "conventional-changelog-conventionalcommits": "^9.1.0",
+    "eslint": "^9.38.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.6.2",
+    "semantic-release": "^25.0.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=8.0.0"
+  }
+}

@@ -1,0 +1,115 @@
+version: "3.9"
+
+services:
+  # PostgreSQL 18 Database
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-whatsapp_flow}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_change_me}
+      POSTGRES_DB: ${DB_NAME:-whatsapp_flows}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    volumes:
+      # PostgreSQL 18 uses /var/lib/postgresql (not /var/lib/postgresql/data)
+      - postgres_whatsapp_flow_data:/var/lib/postgresql
+      # Initialization scripts
+      - ./scripts/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-whatsapp_flow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - whatsapp_flow_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # WhatsApp Flow Server Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Server
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3000}
+      HOST: ${HOST:-0.0.0.0}
+      FLOW_ENDPOINT_TIMEOUT: ${FLOW_ENDPOINT_TIMEOUT:-2500}
+
+      # Database
+      DATABASE_URL: postgresql://${DB_USER:-whatsapp_flow}:${DB_PASSWORD:-secure_password_change_me}@postgres:5432/${DB_NAME:-whatsapp_flows}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-whatsapp_flows}
+      DB_USER: ${DB_USER:-whatsapp_flow}
+      DB_PASSWORD: ${DB_PASSWORD:-secure_password_change_me}
+      DB_POOL_MIN: ${DB_POOL_MIN:-2}
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+
+      # Encryption Keys (set via .env file)
+      PRIVATE_KEY: ${PRIVATE_KEY}
+      PASSPHRASE: ${PASSPHRASE}
+      PUBLIC_KEY: ${PUBLIC_KEY}
+
+      # Meta/WhatsApp Configuration
+      META_APP_SECRET: ${META_APP_SECRET}
+      META_VERIFY_TOKEN: ${META_VERIFY_TOKEN}
+      META_ACCESS_TOKEN: ${META_ACCESS_TOKEN}
+      META_PHONE_NUMBER_ID: ${META_PHONE_NUMBER_ID}
+      META_WABA_ID: ${META_WABA_ID}
+
+      # Callback Configuration
+      CALLBACK_WEBHOOK_URL: ${CALLBACK_WEBHOOK_URL}
+      CALLBACK_TIMEOUT: ${CALLBACK_TIMEOUT:-5000}
+      CALLBACK_MAX_RETRIES: ${CALLBACK_MAX_RETRIES:-3}
+
+      # Security
+      API_TOKEN: ${API_TOKEN}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FILE_PATH: /app/logs/app.log
+      LOG_MAX_FILES: ${LOG_MAX_FILES:-7}
+
+    volumes:
+      # Application logs
+      - app_whatsapp_flow_logs:/app/logs
+    ports:
+      - "${PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - whatsapp_flow_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_whatsapp_flow_data:
+    driver: local
+  app_whatsapp_flow_logs:
+    driver: local
+
+networks:
+  whatsapp_flow_network:
+    driver: bridge
