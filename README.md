@@ -6,6 +6,7 @@
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Multi--Arch-2496ED?logo=docker)](https://hub.docker.com/r/setupautomatizado/whatsapp-flows-server)
+[![Docker Pulls](https://img.shields.io/docker/pulls/setupautomatizado/whatsapp-flows-server?logo=docker&color=0db7ed)](https://hub.docker.com/r/setupautomatizado/whatsapp-flows-server)
 [![GitHub Actions](https://github.com/guilhermejansen/whatsapp-flows-server/workflows/CI/badge.svg)](https://github.com/guilhermejansen/whatsapp-flows-server/actions)
 [![Semantic Release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 
