@@ -1,0 +1,88 @@
+name: ❓ Question
+description: Ask a question about the project
+title: "[Question]: "
+labels: ["question", "needs-triage"]
+assignees:
+  - guilhermejansen
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ❓ Question
+
+        Have a question about WhatsApp Flows Server? We're here to help!
+
+        **Before asking:**
+        - [ ] I have read the [README](https://github.com/guilhermejansen/whatsapp-flows-server/blob/main/README.md)
+        - [ ] I have checked [existing discussions](https://github.com/guilhermejansen/whatsapp-flows-server/discussions)
+        - [ ] I have reviewed the [troubleshooting guide](https://github.com/guilhermejansen/whatsapp-flows-server/blob/main/TROUBLESHOOTING.md)
+        - [ ] I have searched existing issues
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 🏷️ Question Category
+      description: What is your question about?
+      options:
+        - 🚀 Getting Started & Installation
+        - 🔐 Encryption & Security
+        - 📊 Database & Migrations
+        - 🌐 API & Endpoints
+        - 📱 WhatsApp Flows Integration
+        - 🐳 Docker & Deployment
+        - ⚙️ Configuration
+        - 🧪 Testing & Development
+        - ⚡ Performance & Optimization
+        - 🔧 Troubleshooting
+        - 📚 Best Practices
+        - 🔄 CI/CD & Automation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: 💬 Your Question
+      description: What would you like to know?
+      placeholder: Ask your question clearly and concisely
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: 🔍 What I've Tried
+      description: What have you already tried or researched?
+      placeholder: |
+        - I tried...
+        - I looked at...
+        - I read...
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 📌 Context
+      description: Provide any relevant context
+      placeholder: |
+        - What are you trying to achieve?
+        - What's your use case?
+        - Any relevant environment details?
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: ℹ️ Additional Information
+      description: Any other details that might help us answer
+      placeholder: Code snippets, configuration, screenshots, etc.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ Pre-submission Checklist
+      options:
+        - label: This is a question, not a bug report or feature request
+          required: true
+        - label: I have searched for similar questions
+          required: true

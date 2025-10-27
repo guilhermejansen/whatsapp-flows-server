@@ -1,0 +1,177 @@
+# GitHub Labels Configuration
+# This file can be used with tools like github-label-sync to manage repository labels
+# Install: npm install -g github-label-sync
+# Usage: github-label-sync --access-token [token] guilhermejansen/whatsapp-flows-server
+
+# Priority Labels
+- name: "priority: critical"
+  color: "d73a4a"
+  description: "Critical priority - immediate attention required"
+
+- name: "priority: high"
+  color: "ff6b6b"
+  description: "High priority - should be addressed soon"
+
+- name: "priority: medium"
+  color: "fbca04"
+  description: "Medium priority - normal timeline"
+
+- name: "priority: low"
+  color: "0e8a16"
+  description: "Low priority - nice to have"
+
+# Type Labels
+- name: "bug"
+  color: "d73a4a"
+  description: "Something isn't working"
+
+- name: "enhancement"
+  color: "a2eeef"
+  description: "New feature or request"
+
+- name: "documentation"
+  color: "0075ca"
+  description: "Improvements or additions to documentation"
+
+- name: "question"
+  color: "d876e3"
+  description: "Further information is requested"
+
+- name: "security"
+  color: "ee0701"
+  description: "Security-related issues or improvements"
+
+- name: "performance"
+  color: "f9d0c4"
+  description: "Performance improvements"
+
+- name: "refactor"
+  color: "fbca04"
+  description: "Code refactoring (no new features or bug fixes)"
+
+- name: "dependencies"
+  color: "0366d6"
+  description: "Pull requests that update a dependency file"
+
+- name: "ci/cd"
+  color: "128A0C"
+  description: "CI/CD and automation improvements"
+
+# Status Labels
+- name: "needs-triage"
+  color: "ededed"
+  description: "Needs initial triage and categorization"
+
+- name: "needs-investigation"
+  color: "fbca04"
+  description: "Requires further investigation"
+
+- name: "needs-discussion"
+  color: "d876e3"
+  description: "Needs community discussion before proceeding"
+
+- name: "ready-for-review"
+  color: "0e8a16"
+  description: "Ready for maintainer review"
+
+- name: "in-progress"
+  color: "c5def5"
+  description: "Work in progress"
+
+- name: "blocked"
+  color: "d93f0b"
+  description: "Blocked by another issue or external factor"
+
+- name: "on-hold"
+  color: "fef2c0"
+  description: "On hold - paused temporarily"
+
+- name: "wont-fix"
+  color: "ffffff"
+  description: "This will not be worked on"
+
+- name: "duplicate"
+  color: "cfd3d7"
+  description: "This issue or pull request already exists"
+
+- name: "invalid"
+  color: "e4e669"
+  description: "This doesn't seem right"
+
+- name: "released"
+  color: "00FF00"
+  description: "Fixed in a release"
+
+# Domain Labels
+- name: "domain: encryption"
+  color: "c2e0c6"
+  description: "RSA/AES encryption and security"
+
+- name: "domain: database"
+  color: "bfdadc"
+  description: "PostgreSQL and database operations"
+
+- name: "domain: api"
+  color: "d4c5f9"
+  description: "API endpoints and routes"
+
+- name: "domain: flows"
+  color: "fef2c0"
+  description: "WhatsApp Flows integration"
+
+- name: "domain: docker"
+  color: "0db7ed"
+  description: "Docker and containerization"
+
+- name: "domain: webhooks"
+  color: "f9d0c4"
+  description: "Webhook handling and validation"
+
+# Effort Labels
+- name: "effort: small"
+  color: "c5def5"
+  description: "Small effort - few hours"
+
+- name: "effort: medium"
+  color: "bfd4f2"
+  description: "Medium effort - 1-2 days"
+
+- name: "effort: large"
+  color: "5319e7"
+  description: "Large effort - several days"
+
+# Community Labels
+- name: "good first issue"
+  color: "7057ff"
+  description: "Good for newcomers"
+
+- name: "help wanted"
+  color: "008672"
+  description: "Extra attention is needed"
+
+- name: "hacktoberfest"
+  color: "ff6b6b"
+  description: "Hacktoberfest eligible"
+
+# Breaking Changes
+- name: "breaking-change"
+  color: "d93f0b"
+  description: "Introduces breaking changes"
+
+# Testing
+- name: "needs-tests"
+  color: "fbca04"
+  description: "Needs test coverage"
+
+- name: "tests-passing"
+  color: "0e8a16"
+  description: "All tests passing"
+
+# Special
+- name: "stale"
+  color: "fef2c0"
+  description: "No activity for extended period"
+
+- name: "sponsor"
+  color: "ea4aaa"
+  description: "Sponsored feature or priority support"

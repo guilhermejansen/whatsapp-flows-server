@@ -1,0 +1,173 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+assignees:
+  - guilhermejansen
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🐛 Bug Report
+
+        Thanks for taking the time to report a bug! Please fill out the information below to help us resolve the issue.
+
+        **Before submitting:**
+        - [ ] I have searched existing issues to avoid duplicates
+        - [ ] I have read the [Troubleshooting Guide](https://github.com/guilhermejansen/whatsapp-flows-server/blob/main/TROUBLESHOOTING.md)
+        - [ ] I am using the latest version
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 📝 Description
+      description: A clear and concise description of the bug
+      placeholder: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 🔄 Steps to Reproduce
+      description: Detailed steps to reproduce the behavior
+      placeholder: |
+        1. Start the server with '...'
+        2. Send request to '...'
+        3. See error '...'
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: ✅ Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe the expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: ❌ Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 📋 Logs and Error Messages
+      description: Paste relevant logs, error messages, or stack traces
+      placeholder: |
+        Paste logs here (use code blocks for better formatting)
+      render: shell
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: 🌍 Environment
+      description: Where is the bug occurring?
+      options:
+        - Local Development
+        - Docker (Local)
+        - Docker (Production)
+        - Cloud Deployment (AWS, GCP, Azure, etc.)
+        - Other (specify in additional context)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 📦 Version
+      description: What version are you using?
+      placeholder: "e.g., 1.0.0, latest, commit hash"
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: 🟢 Node.js Version
+      description: Output of `node --version`
+      placeholder: "e.g., v20.10.0"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: 💻 Operating System
+      description: What OS are you using?
+      placeholder: "e.g., Ubuntu 22.04, macOS 14.2, Windows 11"
+    validations:
+      required: true
+
+  - type: input
+    id: docker-version
+    attributes:
+      label: 🐳 Docker Version (if applicable)
+      description: Output of `docker --version`
+      placeholder: "e.g., Docker version 24.0.7"
+
+  - type: input
+    id: postgres-version
+    attributes:
+      label: 🐘 PostgreSQL Version
+      description: Output of `psql --version` or Docker image tag
+      placeholder: "e.g., PostgreSQL 18.1"
+
+  - type: textarea
+    id: config
+    attributes:
+      label: ⚙️ Configuration
+      description: Relevant environment variables or configuration (remove sensitive data!)
+      placeholder: |
+        NODE_ENV=production
+        PORT=3000
+        DATABASE_URL=postgresql://...
+        # DO NOT share secrets, tokens, or private keys!
+      render: bash
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 📌 Additional Context
+      description: Any other context about the problem
+      placeholder: Add any other context, screenshots, or information that might help
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 🚨 Severity
+      description: How critical is this bug?
+      options:
+        - 🔴 Critical - System is broken or data loss
+        - 🟠 High - Major feature not working
+        - 🟡 Medium - Feature partially broken
+        - 🟢 Low - Minor issue or cosmetic
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ Pre-submission Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched for similar issues and found none
+          required: true
+        - label: I have provided all required information
+          required: true
+        - label: I have removed sensitive data from logs and configuration
+          required: true
+        - label: I am willing to help test a fix if needed
+          required: false

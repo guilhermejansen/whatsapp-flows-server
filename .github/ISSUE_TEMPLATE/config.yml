@@ -1,0 +1,25 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/guilhermejansen/whatsapp-flows-server/discussions
+    about: Ask questions and discuss ideas with the community
+
+  - name: 🔒 Security Vulnerability
+    url: https://github.com/guilhermejansen/whatsapp-flows-server/security/advisories/new
+    about: Report a security vulnerability privately (DO NOT create a public issue)
+
+  - name: 📖 Documentation
+    url: https://github.com/guilhermejansen/whatsapp-flows-server#readme
+    about: Read the comprehensive documentation
+
+  - name: 🔧 Troubleshooting Guide
+    url: https://github.com/guilhermejansen/whatsapp-flows-server/blob/main/TROUBLESHOOTING.md
+    about: Common issues and solutions
+
+  - name: 🌐 Setup Automatizado
+    url: https://setupautomatizado.com.br
+    about: Professional support and consulting services
+
+  - name: 📧 Email Contact
+    url: mailto:guilherme@setupautomatizado.com.br
+    about: Contact the maintainer directly

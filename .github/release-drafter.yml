@@ -1,0 +1,144 @@
+# Release Drafter Configuration
+# Automatically drafts release notes based on pull requests
+# https://github.com/release-drafter/release-drafter
+
+# Note: This is complementary to semantic-release
+# Can be used for manual releases or additional release notes
+
+name-template: 'v$RESOLVED_VERSION 🎉'
+tag-template: 'v$RESOLVED_VERSION'
+
+# Categories for the release notes
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'enhancement'
+      - 'feature'
+
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'bug'
+      - 'fix'
+
+  - title: '🔐 Security'
+    labels:
+      - 'security'
+
+  - title: '⚡ Performance'
+    labels:
+      - 'performance'
+
+  - title: '📚 Documentation'
+    labels:
+      - 'documentation'
+
+  - title: '🔧 Maintenance'
+    labels:
+      - 'refactor'
+      - 'chore'
+      - 'dependencies'
+
+  - title: '🧪 Testing'
+    labels:
+      - 'test'
+
+  - title: '🐳 Docker & Deployment'
+    labels:
+      - 'docker'
+      - 'ci/cd'
+
+# Version resolver
+version-resolver:
+  major:
+    labels:
+      - 'breaking-change'
+      - 'major'
+  minor:
+    labels:
+      - 'enhancement'
+      - 'feature'
+      - 'minor'
+  patch:
+    labels:
+      - 'bug'
+      - 'fix'
+      - 'patch'
+      - 'security'
+  default: patch
+
+# Change template
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+
+# Template for changes without PR
+change-title-escapes: '\<*_&'
+
+# Release note template
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  ## 📊 Statistics
+
+  **Contributors:** $CONTRIBUTORS
+
+  ## 🙏 Thank You
+
+  Thank you to all contributors who made this release possible!
+
+  ---
+
+  **Full Changelog**: https://github.com/guilhermejansen/whatsapp-flows-server/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+
+# Exclude labels
+exclude-labels:
+  - 'skip-changelog'
+  - 'invalid'
+  - 'duplicate'
+  - 'wont-fix'
+
+# Automatically label PRs
+autolabeler:
+  - label: 'documentation'
+    files:
+      - '*.md'
+      - 'docs/**/*'
+
+  - label: 'docker'
+    files:
+      - 'Dockerfile'
+      - 'docker-compose*.yml'
+      - '.dockerignore'
+
+  - label: 'ci/cd'
+    files:
+      - '.github/workflows/*'
+      - '.releaserc.json'
+
+  - label: 'dependencies'
+    files:
+      - 'package.json'
+      - 'package-lock.json'
+
+  - label: 'domain: database'
+    files:
+      - 'src/infrastructure/database/**/*'
+      - 'scripts/migrations/**/*'
+
+  - label: 'domain: encryption'
+    files:
+      - 'src/infrastructure/security/**/*'
+      - 'src/domain/encryption/**/*'
+
+  - label: 'domain: api'
+    files:
+      - 'src/infrastructure/http/**/*'
+
+  - label: 'domain: flows'
+    files:
+      - 'src/domain/flows/**/*'
+
+# Replacers for version resolution
+replacers:
+  - search: '/breaking-change/i'
+    replace: 'BREAKING CHANGE'

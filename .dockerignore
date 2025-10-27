@@ -1,0 +1,105 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# GitHub
+.github
+
+# Node.js
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.npm
+.yarn
+
+# Build outputs (will be built in container)
+dist
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Testing
+coverage
+.nyc_output
+*.test.ts
+*.spec.ts
+__tests__
+__mocks__
+
+# Documentation
+*.md
+!README.md
+docs
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Keys (security - never include in image)
+keys
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Backups
+backups
+*.sql
+*.dump
+
+# Makefile
+Makefile
+
+# CI/CD
+.gitlab-ci.yml
+.travis.yml
+azure-pipelines.yml
+Jenkinsfile
+
+# Scripts not needed in production
+scripts/send-*.ts
+scripts/send-*.sh
+scripts/test-*.ts
+scripts/docker-init.sh
+scripts/start-with-ngrok.sh
+
+# Temporary files
+tmp
+temp
+.tmp
+*.tmp
+
+# OS specific
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Husky
+.husky
+
+# Semantic Release
+.releaserc.json
+CHANGELOG.md
+commitlint.config.js

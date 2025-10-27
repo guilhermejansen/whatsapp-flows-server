@@ -1,0 +1,102 @@
+name: 📚 Documentation
+description: Report documentation issues or suggest improvements
+title: "[Docs]: "
+labels: ["documentation", "needs-triage"]
+assignees:
+  - guilhermejansen
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📚 Documentation Issue
+
+        Help us improve our documentation! Whether it's a typo, missing information, or unclear explanation, we appreciate your feedback.
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: 📝 Documentation Type
+      description: What type of documentation issue is this?
+      options:
+        - ❌ Error or Inaccuracy
+        - 📖 Missing Information
+        - 🔍 Unclear or Confusing
+        - ✨ Enhancement or New Guide
+        - 🌍 Translation
+        - 💡 Example Needed
+        - 🔗 Broken Link
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: location
+    attributes:
+      label: 📍 Documentation Location
+      description: Where is the documentation issue?
+      options:
+        - README.md
+        - CONTRIBUTING.md
+        - SECURITY.md
+        - TROUBLESHOOTING.md
+        - CLAUDE.md
+        - API Documentation (/api-docs)
+        - Code Comments
+        - GitHub Wiki
+        - Other (specify below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: 🐛 Issue Description
+      description: Describe the documentation issue
+      placeholder: |
+        What's wrong or missing in the documentation?
+        Be specific about what needs to be fixed or added.
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: 📄 Current Documentation
+      description: Paste the current documentation text (if applicable)
+      placeholder: Quote the problematic section
+      render: markdown
+
+  - type: textarea
+    id: suggested
+    attributes:
+      label: ✏️ Suggested Improvement
+      description: How should the documentation be improved?
+      placeholder: |
+        Provide your suggested changes or additions
+      render: markdown
+    validations:
+      required: true
+
+  - type: input
+    id: link
+    attributes:
+      label: 🔗 Direct Link
+      description: Link to the specific documentation section (if applicable)
+      placeholder: https://github.com/guilhermejansen/whatsapp-flows-server/blob/main/...
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 📌 Additional Context
+      description: Any other relevant information
+      placeholder: Screenshots, related issues, or additional context
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: 🙋 Contribution
+      description: Would you like to help fix this?
+      options:
+        - label: I can submit a PR with the documentation fix
+          required: false

@@ -1,0 +1,57 @@
+# CODEOWNERS
+# This file defines code ownership for the WhatsApp Flows Server project.
+# Code owners are automatically requested for review when someone opens a pull request.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+* @guilhermejansen
+
+# Core Architecture & Domain Logic
+/src/domain/ @guilhermejansen
+/src/application/ @guilhermejansen
+
+# Infrastructure & Database
+/src/infrastructure/database/ @guilhermejansen
+/scripts/migrations/ @guilhermejansen
+
+# Security & Encryption
+/src/infrastructure/security/ @guilhermejansen
+/src/domain/encryption/ @guilhermejansen
+
+# API & Routes
+/src/infrastructure/http/ @guilhermejansen
+
+# Configuration
+/src/config/ @guilhermejansen
+.env* @guilhermejansen
+
+# Docker & Deployment
+Dockerfile @guilhermejansen
+docker-compose*.yml @guilhermejansen
+docker-entrypoint.sh @guilhermejansen
+.dockerignore @guilhermejansen
+
+# CI/CD & GitHub Actions
+/.github/workflows/ @guilhermejansen
+/.github/ISSUE_TEMPLATE/ @guilhermejansen
+.releaserc.json @guilhermejansen
+commitlint.config.js @guilhermejansen
+
+# Documentation
+*.md @guilhermejansen
+/docs/ @guilhermejansen
+
+# Package Management
+package.json @guilhermejansen
+package-lock.json @guilhermejansen
+
+# TypeScript Configuration
+tsconfig.json @guilhermejansen
+
+# Testing
+/tests/ @guilhermejansen
+*.test.ts @guilhermejansen
+*.spec.ts @guilhermejansen
+
+# Scripts
+/scripts/ @guilhermejansen

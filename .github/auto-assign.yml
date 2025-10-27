@@ -1,0 +1,31 @@
+# Auto-assign configuration
+# Automatically assigns reviewers and assignees to pull requests and issues
+
+# Auto-assign reviewers to pull requests
+addReviewers: true
+
+# Auto-assign assignees to pull requests
+addAssignees: author
+
+# Reviewers to assign (will rotate between them)
+reviewers:
+  - guilhermejansen
+
+# Number of reviewers to assign
+numberOfReviewers: 1
+
+# Assign based on changed files (optional)
+# filePathAssignments:
+#   - patterns:
+#       - "src/domain/**"
+#     reviewers:
+#       - guilhermejansen
+
+# Skip keywords in title or body
+skipKeywords:
+  - wip
+  - WIP
+  - "[WIP]"
+  - "work in progress"
+  - "do not merge"
+  - "[DNM]"
