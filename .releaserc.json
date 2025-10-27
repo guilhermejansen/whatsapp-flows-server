@@ -43,6 +43,12 @@
             { "type": "build", "section": "📦 Build", "hidden": true },
             { "type": "ci", "section": "👷 CI/CD", "hidden": true }
           ]
+        },
+        "writerOpts": {
+          "mainTemplate": "{{> header}}\n\n{{> linksBlock}}\n\n{{> body}}\n\n{{> footer}}",
+          "partials": {
+            "linksBlock": "- Latest Releases: https://github.com/guilhermejansen/whatsapp-flows-server/releases\n- Full Changelog (GitHub): https://github.com/guilhermejansen/whatsapp-flows-server/blob/main/CHANGELOG.md\n- Docker Hub Image: https://hub.docker.com/r/setupautomatizado/whatsapp-flows-server\n- Issue Tracker: https://github.com/guilhermejansen/whatsapp-flows-server/issues\n- Project Repository: https://github.com/guilhermejansen/whatsapp-flows-server\n\n## Useful Links\n- Repository: https://github.com/guilhermejansen/whatsapp-flows-server\n- Issues: https://github.com/guilhermejansen/whatsapp-flows-server/issues\n- Discussions: https://github.com/guilhermejansen/whatsapp-flows-server/discussions\n- Docker Hub Image: https://hub.docker.com/r/setupautomatizado/whatsapp-flows-server\n- GitHub Releases: https://github.com/guilhermejansen/whatsapp-flows-server/releases\n- Changelog: https://github.com/guilhermejansen/whatsapp-flows-server/blob/main/CHANGELOG.md\n- Release Pipeline (GitHub Actions): https://github.com/guilhermejansen/whatsapp-flows-server/actions/workflows/release.yml"
+          }
         }
       }
     ],

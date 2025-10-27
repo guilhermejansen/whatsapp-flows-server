@@ -1,4 +1,4 @@
-# WhatsApp Flow Server
+# WhatsApp Flows Server
 
 <div align="center">
 
@@ -340,12 +340,12 @@ server {
     location / {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
-        
+
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # WhatsApp requires < 3s response
         proxy_connect_timeout 2s;
         proxy_send_timeout 2s;
@@ -401,9 +401,6 @@ docker-compose exec postgres psql -U whatsapp_flow -d whatsapp_flows
 # Run migrations manually
 docker-compose exec app npm run migrate
 
-# Seed database
-docker-compose exec app npm run seed
-
 # Backup database
 docker-compose exec postgres pg_dump -U whatsapp_flow whatsapp_flows > backup.sql
 
@@ -443,9 +440,6 @@ npm run generate-keys
 
 # Validate keys
 npm run validate-keys
-
-# Test encryption
-npm run test-encryption
 
 # Register public key with Meta
 npm run register-key
@@ -573,7 +567,7 @@ X-Hub-Signature-256: sha256=...
 
 ### Swagger Documentation
 
-Interactive API docs available at `/api-docs` when server is running.
+Interactive API docs available at `/docs` when server is running.
 
 ---
 
@@ -586,14 +580,6 @@ Interactive API docs available at `/api-docs` when server is running.
 - [Receiving Flow Response](https://developers.facebook.com/docs/whatsapp/flows/guides/receiveflowresponse/)
 - [Flow JSON Reference](https://developers.facebook.com/docs/whatsapp/flows/reference/flowjson/)
 - [Encryption Guide](https://developers.facebook.com/docs/whatsapp/flows/guides/encryption/)
-
-### Project Documentation
-
-- [Project Index](./docs/init.md) - Complete business rules and development guide
-- [CLAUDE.md](./CLAUDE.md) - Architecture and DDD patterns
-- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Common issues and solutions
-- [SECURITY.md](./SECURITY.md) - Security policy and vulnerability reporting
-- [LICENSE](./LICENSE) - MIT License
 
 ---
 
@@ -637,14 +623,11 @@ npm start                # Start production server
 
 # Database
 npm run migrate          # Run migrations
-npm run seed             # Seed feedback flow
-npm run seed:csat        # Seed CSAT template
 
 # Encryption
 npm run generate-keys    # Generate RSA keys
 npm run validate-keys    # Validate configuration
 npm run register-key     # Register public key with Meta
-npm run test-encryption  # Test encryption setup
 
 # Code Quality
 npm run lint             # Run ESLint
@@ -679,21 +662,6 @@ curl -X POST http://localhost:3000/api/flows \
     "flow_json": {"version":"7.2","screens":[...]},
     "description": "My custom flow"
   }'
-```
-
-**Method 2: Via Seed Script**
-```bash
-# Copy template
-cp scripts/seed-csat-template.ts scripts/seed-my-flow.ts
-
-# Edit flow JSON
-nano scripts/seed-my-flow.ts
-
-# Add to package.json
-"seed:my-flow": "tsx scripts/seed-my-flow.ts"
-
-# Run
-npm run seed:my-flow
 ```
 
 Configure in WhatsApp Manager:
@@ -869,8 +837,6 @@ docker-compose exec app npm run migrate
 npm run register-key
 ```
 
-See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for complete guide.
-
 ---
 
 ## 📝 License
@@ -888,6 +854,14 @@ This project is licensed under the **MIT License** - see the [LICENSE](./LICENSE
 - GitHub: [@guilhermejansen](https://github.com/guilhermejansen)
 - Email: guilherme@setupautomatizado.com.br
 
+### Contributors Wall
+
+<a href="https://github.com/guilhermejansen/whatsapp-flows-server/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=guilhermejansen/whatsapp-flows-server" alt="List of contributors" />
+</a>
+
+Want to join the board? Check the [contributing guide](./CONTRIBUTING.md) and open your first PR!
+
 ### Special Thanks
 
 - Meta/WhatsApp team for the Flows API
@@ -900,7 +874,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](./LICENSE
 
 If this project helped you, please consider giving it a ⭐ on GitHub!
 
-[![Star History Chart](https://api.star-history.com/svg?repos=guilhermejansen/whatsapp-flow&type=Date)](https://star-history.com/#guilhermejansen/whatsapp-flow&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=guilhermejansen/whatsapp-flows-server&type=Date)](https://star-history.com/#guilhermejansen/whatsapp-flows-server&Date)
 
 ---
 
@@ -908,8 +882,8 @@ If this project helped you, please consider giving it a ⭐ on GitHub!
 
 ### Community Support
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/guilhermejansen/whatsapp-flow/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/guilhermejansen/whatsapp-flow/discussions)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/guilhermejansen/whatsapp-flows-server/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/guilhermejansen/whatsapp-flows-server/discussions)
 - 📖 **Documentation**: Check docs in repository
 - 💬 **Questions**: Open a discussion
 
@@ -940,6 +914,6 @@ For enterprise support, custom integrations, or consulting:
 
 **Made with ❤️ by [Guilherme Jansen](https://setupautomatizado.com.br)**
 
-**[⬆ Back to Top](#whatsapp-flow-server)**
+**[⬆ Back to Top](#whatsapp-flows-server)**
 
 </div>
