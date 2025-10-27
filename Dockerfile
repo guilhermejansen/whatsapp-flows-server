@@ -4,7 +4,7 @@
 # ======================
 # Stage 1: Builder
 # ======================
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 
 # Build arguments
 ARG VERSION=dev
@@ -33,7 +33,7 @@ RUN npm run build && \
 # ======================
 # Stage 2: Production
 # ======================
-FROM node:20-alpine
+FROM node:25-alpine
 
 # Metadata labels
 LABEL maintainer="Guilherme Jansen"
