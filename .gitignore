@@ -29,6 +29,7 @@ pnpm-debug.log*
 *.swo
 *~
 .DS_Store
+.claude/
 
 # Test coverage
 coverage/
