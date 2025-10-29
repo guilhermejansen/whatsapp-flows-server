@@ -1,6 +1,6 @@
 {
   "name": "whatsapp-flows-server",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Production-ready Node.js server for WhatsApp Flows with automated CI/CD, multi-arch Docker support, and DDD architecture",
   "main": "dist/main.js",
   "repository": {

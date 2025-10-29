@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.2](https://github.com/guilhermejansen/whatsapp-flows-server/releases/tag/v1.1.2) (2025-10-29)
+
+### 📦 Release Assets
+- [Docker Image](https://hub.docker.com/r/setupautomatizado/whatsapp-flows-server/tags)
+- [GitHub Release](https://github.com/guilhermejansen/whatsapp-flows-server/releases/tag/v1.1.2)
+- [Full Changelog](https://github.com/guilhermejansen/whatsapp-flows-server/blob/main/CHANGELOG.md)
+
+### 🔗 Useful Links
+- [Repository](https://github.com/guilhermejansen/whatsapp-flows-server)
+- [Issues](https://github.com/guilhermejansen/whatsapp-flows-server/issues)
+- [Discussions](https://github.com/guilhermejansen/whatsapp-flows-server/discussions)
+- [Release Pipeline](https://github.com/guilhermejansen/whatsapp-flows-server/actions/workflows/release.yml)
+
+
+
+### 🐛 Bug Fixes
+
+* **docker:** Ajust docker entrypoint debug ([75f43b6](https://github.com/guilhermejansen/whatsapp-flows-server/commit/75f43b69b2ddd85e58e0a8260f05f7885f6889c8))
+
 ## [1.1.1](https://github.com/guilhermejansen/whatsapp-flows-server/releases/tag/v1.1.1) (2025-10-29)
 
 ### 📦 Release Assets
