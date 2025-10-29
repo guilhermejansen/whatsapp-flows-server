@@ -15,10 +15,12 @@ EOF_LOGO
 
 app_version="${APP_VERSION:-${VERSION:-development}}"
 node_runtime_version="${NODE_VERSION:-$(node -v 2>/dev/null || echo 'unknown')}"
+package_manager=$(command -v npm || command -v yarn || echo 'unknown')
 
 echo "📦 Version: ${app_version}"
 echo "🟢 Node.js: ${node_runtime_version}"
 echo "🐳 Container: $(hostname)"
+echo "📦 Package Manager: ${package_manager}"
 echo ""
 
 # Helper to normalize quoted environment values (Portainer wraps values in quotes)
