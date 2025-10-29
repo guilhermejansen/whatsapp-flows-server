@@ -1,0 +1,130 @@
+version: '3.9'
+
+services:
+  whatsapp_flow_app:
+    image: setupautomatizado/whatsapp-flow-server:sha-REPLACE_ME
+    hostname: '{{.Service.Name}}.{{.Task.Slot}}'
+    environment:
+      - NODE_ENV=production # Execution environment mode
+      - PORT=3000 # HTTP port exposed by the service
+      - HOST=0.0.0.0 # Bind address used by the application
+      - FLOW_ENDPOINT_TIMEOUT=2500 # Timeout in ms to keep WhatsApp SLA under 3s
+      - DATABASE_URL=postgresql://whatsapp_flow:secure_password_change_me@postgres_whatsapp_flow:5432/whatsapp_flows # Postgres connection string used by the app
+      - DB_HOST=postgres_whatsapp_flow # Hostname for Postgres inside the swarm network
+      - DB_PORT=5432 # Postgres port inside the swarm network
+      - DB_NAME=whatsapp_flows # Database name storing flow data
+      - DB_USER=whatsapp_flow # Database user with access to the schema
+      - DB_PASSWORD=secure_password_change_me # Database user password
+      - DB_POOL_MIN=2 # Minimum Postgres connections maintained by the pool
+      - DB_POOL_MAX=10 # Maximum Postgres connections allowed in the pool
+      - PRIVATE_KEY=REPLACE_WITH_ESCAPED_RSA_PRIVATE_KEY # RSA private key (PEM, escaped for env)
+      - PASSPHRASE=optional_passphrase_if_set # Optional passphrase for the private key
+      - PUBLIC_KEY=REPLACE_WITH_RSA_PUBLIC_KEY # RSA public key registered with Meta
+      - META_APP_SECRET=REPLACE_WITH_META_APP_SECRET # Meta secret for webhook signature validation
+      - META_VERIFY_TOKEN=REPLACE_WITH_META_VERIFY_TOKEN # Token returned during webhook verification
+      - META_ACCESS_TOKEN=REPLACE_WITH_META_ACCESS_TOKEN # OAuth token to manage flows with Meta
+      - META_PHONE_NUMBER_ID=REPLACE_WITH_META_PHONE_NUMBER_ID # Phone number ID tied to the WhatsApp Business account
+      - META_WABA_ID=REPLACE_WITH_META_WABA_ID # WhatsApp Business Account ID
+      - CALLBACK_WEBHOOK_URL=https://example.com/flow-callback # External endpoint receiving flow completion callbacks
+      - CALLBACK_TIMEOUT=5000 # Timeout in ms for outbound callback requests
+      - CALLBACK_MAX_RETRIES=3 # Maximum retries for callback delivery
+      - API_TOKEN=internal_api_token_here # Optional bearer token for internal API routes
+      - CORS_ORIGINS=* # Allowed origins for CORS requests
+      - RATE_LIMIT_WINDOW_MS=60000 # Global rate limit window in milliseconds
+      - RATE_LIMIT_MAX_REQUESTS=100 # Requests allowed per rate limit window
+      - LOG_LEVEL=info # Winston logging level
+      - LOG_FILE_PATH=/app/logs/app.log # File path for application logs inside the container
+      - LOG_MAX_FILES=7 # Rolling log files retained on disk
+      - DEFAULT_FLOW_NAME=csat-feedback # Fallback flow name if resolution fails
+    networks:
+      - network_public
+    volumes:
+      - app_whatsapp_flow_logs:/app/logs
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        order: start-first
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.whatsapp_flow.rule=Host(`whatsapp.flow.setupautomatizado.com.br`)
+        - traefik.http.routers.whatsapp_flow.entrypoints=websecure
+        - traefik.http.routers.whatsapp_flow.tls.certresolver=letsencryptresolver
+        - traefik.http.services.whatsapp_flow.loadbalancer.server.port=3000
+        - traefik.http.services.whatsapp_flow.loadbalancer.passHostHeader=true
+
+  postgres_whatsapp_flow:
+    image: postgres:18
+    hostname: '{{.Service.Name}}.{{.Task.Slot}}'
+    environment:
+      - POSTGRES_USER=whatsapp_flow # Database user created on initialization
+      - POSTGRES_PASSWORD=secure_password_change_me # Strong password for the database user
+      - POSTGRES_DB=whatsapp_flows # Default database created for the application
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --locale=en_US.UTF-8 # Init arguments guaranteeing UTF-8 support
+      - TZ=America/Sao_Paulo # Timezone for the database server
+    command: ['postgres', '-c', 'max_connections=200']
+    networks:
+      - network_public
+    volumes:
+      - postgres_whatsapp_flow_data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U whatsapp_flow -d whatsapp_flows']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: '2'
+          memory: 3G
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+
+volumes:
+  postgres_whatsapp_flow_data:
+    external: true
+    name: postgres_whatsapp_flow_data
+  app_whatsapp_flow_logs:
+    external: true
+    name: app_whatsapp_flow_logs
+
+networks:
+  network_public:
+    external: true
+    name: network_public
