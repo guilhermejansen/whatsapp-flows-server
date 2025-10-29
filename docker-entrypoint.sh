@@ -21,19 +21,35 @@ echo "🟢 Node.js: ${node_runtime_version}"
 echo "🐳 Container: $(hostname)"
 echo ""
 
+# Helper to normalize quoted environment values (Portainer wraps values in quotes)
+strip_quotes() {
+    value="$1"
+
+    if [ "${value}" != "${value#\"}" ] && [ "${value}" != "${value%\"}" ]; then
+        value="${value#\"}"
+        value="${value%\"}"
+    elif [ "${value}" != "${value#\'}" ] && [ "${value}" != "${value%\'}" ]; then
+        value="${value#\'}"
+        value="${value%\'}"
+    fi
+
+    printf '%s' "$value"
+}
+
 # Function to wait for database
 wait_for_db() {
     echo "⏳ Waiting for PostgreSQL to be ready..."
 
-    host="${DB_HOST:-postgres}"
-    port="${DB_PORT:-5432}"
-    user="${DB_USER:-whatsapp_flow}"
+    host="$(strip_quotes "${DB_HOST:-postgres}")"
+    port="$(strip_quotes "${DB_PORT:-5432}")"
+    user="$(strip_quotes "${DB_USER:-whatsapp_flow}")"
 
     # Determine database name for readiness probe
     if [ -n "${DB_NAME}" ]; then
-        database="${DB_NAME}"
+        database="$(strip_quotes "${DB_NAME}")"
     elif [ -n "${DATABASE_URL}" ]; then
-        database="${DATABASE_URL##*/}"
+        parsed_url="$(strip_quotes "${DATABASE_URL}")"
+        database="${parsed_url##*/}"
         database="${database%%\?*}"
     else
         database="${user}"
@@ -41,7 +57,7 @@ wait_for_db() {
 
     # Ensure pg_isready has access to the password when provided
     if [ -z "${PGPASSWORD}" ] && [ -n "${DB_PASSWORD}" ]; then
-        export PGPASSWORD="${DB_PASSWORD}"
+        export PGPASSWORD="$(strip_quotes "${DB_PASSWORD}")"
     fi
 
     max_retries=30
