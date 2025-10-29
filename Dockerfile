@@ -55,7 +55,8 @@ RUN apk add --no-cache \
     dumb-init \
     curl \
     tini \
-    ca-certificates && \
+    ca-certificates \
+    postgresql-client && \
     update-ca-certificates
 
 WORKDIR /app

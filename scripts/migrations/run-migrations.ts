@@ -60,19 +60,31 @@ async function runMigrations() {
     console.log('🎉 All migrations completed successfully!\n');
 
     // Show tables
-    const tablesResult = await pool.query(`
-      SELECT table_name
-      FROM information_schema.tables
-      WHERE table_schema = 'public'
-      ORDER BY table_name;
-    `);
+    try {
+      const tablesResult = await pool.query(`
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_type = 'BASE TABLE'
+        ORDER BY table_name;
+      `);
 
-    console.log('📋 Database tables:');
-    tablesResult.rows.forEach((row) => {
-      console.log(`  - ${row.table_name}`);
-    });
-    console.log('');
-
+      if (tablesResult.rows.length > 0) {
+        console.log('📋 Database tables:');
+        tablesResult.rows.forEach((row) => {
+          console.log(`  - ${row.table_name}`);
+        });
+      } else {
+        console.log('⚠️  No tables found in database');
+      }
+      console.log('');
+    } catch (tableError) {
+      console.warn(
+        '⚠️  Could not list tables:',
+        tableError instanceof Error ? tableError.message : String(tableError)
+      );
+      console.log('');
+    }
   } catch (error) {
     console.error('❌ Migration failed:', error);
     process.exit(1);
