@@ -57,7 +57,8 @@ async function runMigrations() {
       console.log(`✅ ${file} completed\n`);
     }
 
-    console.log('🎉 All migrations completed successfully!\n');
+    console.log('🎉 All migrations completed successfully!');
+    console.log('');
 
     // Show tables
     try {
@@ -70,10 +71,8 @@ async function runMigrations() {
       `);
 
       if (tablesResult.rows.length > 0) {
-        console.log('📋 Database tables:');
-        tablesResult.rows.forEach((row) => {
-          console.log(`  - ${row.table_name}`);
-        });
+        const tableNames = tablesResult.rows.map((row) => row.table_name).join(', ');
+        console.log('📋 Database tables: ' + tableNames);
       } else {
         console.log('⚠️  No tables found in database');
       }
