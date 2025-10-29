@@ -41,6 +41,7 @@ strip_quotes() {
 # Function to wait for database
 wait_for_db() {
     echo "⏳ Waiting for PostgreSQL to be ready..."
+    echo ""
 
     host="$(strip_quotes "${DB_HOST:-postgres}")"
     port="$(strip_quotes "${DB_PORT:-5432}")"
@@ -57,22 +58,57 @@ wait_for_db() {
         database="${user}"
     fi
 
+    # Show detected PostgreSQL configuration
+    echo "📊 Detected PostgreSQL Configuration:"
+    echo "   Host: ${host}"
+    echo "   Port: ${port}"
+    echo "   User: ${user}"
+    echo "   Database: ${database}"
+
+    # Show raw environment variables for debugging
+    echo ""
+    echo "🔍 Raw Environment Variables:"
+    echo "   DB_HOST: ${DB_HOST:-<not set>}"
+    echo "   DB_PORT: ${DB_PORT:-<not set>}"
+    echo "   DB_USER: ${DB_USER:-<not set>}"
+    echo "   DB_NAME: ${DB_NAME:-<not set>}"
+    echo "   DB_PASSWORD: ${DB_PASSWORD:+<set>}${DB_PASSWORD:-<not set>}"
+    echo "   DATABASE_URL: ${DATABASE_URL:+<set>}${DATABASE_URL:-<not set>}"
+    echo "   PGPASSWORD: ${PGPASSWORD:+<set>}${PGPASSWORD:-<not set>}"
+    echo ""
+
     # Ensure pg_isready has access to the password when provided
     if [ -z "${PGPASSWORD}" ] && [ -n "${DB_PASSWORD}" ]; then
         export PGPASSWORD="$(strip_quotes "${DB_PASSWORD}")"
+        echo "✓ Set PGPASSWORD from DB_PASSWORD"
     fi
 
     max_retries=30
     retry_count=0
+    echo "🔄 Starting connection attempts..."
+    echo ""
 
-    until pg_isready -h "${host}" -p "${port}" -U "${user}" -d "${database}" 2>/dev/null || [ $retry_count -eq $max_retries ]; do
+    until pg_isready -h "${host}" -p "${port}" -U "${user}" -d "${database}" 2>&1 | tee /dev/stderr || [ $retry_count -eq $max_retries ]; do
         retry_count=$((retry_count + 1))
         echo "   Attempt $retry_count/$max_retries - Database not ready yet..."
+
+        # Try manual connection test for better diagnostics
+        if command -v psql >/dev/null 2>&1; then
+            echo "   Testing with psql: PGPASSWORD=*** psql -h ${host} -p ${port} -U ${user} -d ${database} -c '\\conninfo'"
+            PGPASSWORD="${PGPASSWORD}" psql -h "${host}" -p "${port}" -U "${user}" -d "${database}" -c '\conninfo' 2>&1 || true
+        fi
+
         sleep 2
     done
 
     if [ $retry_count -eq $max_retries ]; then
         echo "❌ Failed to connect to database after $max_retries attempts"
+        echo ""
+        echo "🔍 Troubleshooting Steps:"
+        echo "   1. Check if PostgreSQL container is running: docker ps"
+        echo "   2. Check PostgreSQL logs: docker logs <postgres_container_id>"
+        echo "   3. Verify network connectivity: docker network inspect whatsapp_flow_network"
+        echo "   4. Verify environment variables are passed correctly"
         exit 1
     fi
 
