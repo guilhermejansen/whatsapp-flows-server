@@ -53,17 +53,14 @@ const transports: winston.transport[] = [
     maxFiles: env.LOG_MAX_FILES,
     format: customFormat,
   }),
-];
 
-// Add console transport in development
-if (env.NODE_ENV === 'development') {
-  transports.push(
-    new winston.transports.Console({
-      format: consoleFormat,
-      level: env.LOG_LEVEL,
-    })
-  );
-}
+  // Console transport - ALWAYS enabled for Docker logs (stdout/stderr)
+  // Uses colorized format in development, JSON in production
+  new winston.transports.Console({
+    format: env.NODE_ENV === 'production' ? customFormat : consoleFormat,
+    level: env.LOG_LEVEL,
+  }),
+];
 
 // Create logger
 export const logger = winston.createLogger({
