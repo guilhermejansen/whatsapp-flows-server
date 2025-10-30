@@ -1,6 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { env, isProduction } from './env.config';
 
 /**
@@ -514,16 +514,33 @@ const swaggerDefinition = {
 
 /**
  * Swagger JSDoc options
+ *
+ * In production, the application runs from compiled .js files in dist/
+ * In development, we use the source .ts files in src/
+ *
+ * Uses absolute paths to ensure compatibility across different working directories
  */
+const projectRoot = resolve(process.cwd());
+
+const apiPaths = isProduction
+  ? [
+      join(projectRoot, 'dist/infrastructure/http/express/routes/*.js'),
+      join(projectRoot, 'dist/infrastructure/http/express/controllers/*.js'),
+    ]
+  : [
+      join(projectRoot, 'src/infrastructure/http/express/routes/*.ts'),
+      join(projectRoot, 'src/infrastructure/http/express/controllers/*.ts'),
+    ];
+
 const swaggerOptions: swaggerJsdoc.Options = {
   definition: swaggerDefinition,
-  apis: [
-    './src/infrastructure/http/express/routes/*.ts',
-    './src/infrastructure/http/express/controllers/*.ts',
-  ],
+  apis: apiPaths,
 };
 
 /**
  * Generate Swagger specification
+ *
+ * Note: This is generated once when the module is first imported.
+ * The spec is cached by Node.js module system.
  */
 export const swaggerSpec = swaggerJsdoc(swaggerOptions);

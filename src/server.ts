@@ -148,6 +148,12 @@ export function createServer(): Express {
   // API DOCUMENTATION
   // ======================
 
+  // Swagger JSON endpoint - MUST come BEFORE swagger-ui-express to avoid conflicts
+  app.get('/docs.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.json(swaggerSpec);
+  });
+
   // Swagger UI options
   const swaggerUiOptions = {
     customCss: '.swagger-ui .topbar { display: none }',
@@ -155,12 +161,6 @@ export function createServer(): Express {
   };
 
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
-
-  // Swagger JSON endpoint
-  app.get('/docs.json', (_req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(swaggerSpec);
-  });
 
   // ======================
   // ROUTES
