@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.7](https://github.com/guilhermejansen/whatsapp-flows-server/releases/tag/v1.1.7) (2025-10-30)
+
+### 📦 Release Assets
+- [Docker Image](https://hub.docker.com/r/setupautomatizado/whatsapp-flows-server/tags)
+- [GitHub Release](https://github.com/guilhermejansen/whatsapp-flows-server/releases/tag/v1.1.7)
+- [Full Changelog](https://github.com/guilhermejansen/whatsapp-flows-server/blob/main/CHANGELOG.md)
+
+### 🔗 Useful Links
+- [Repository](https://github.com/guilhermejansen/whatsapp-flows-server)
+- [Issues](https://github.com/guilhermejansen/whatsapp-flows-server/issues)
+- [Discussions](https://github.com/guilhermejansen/whatsapp-flows-server/discussions)
+- [Release Pipeline](https://github.com/guilhermejansen/whatsapp-flows-server/actions/workflows/release.yml)
+
+
+
+### 🐛 Bug Fixes
+
+* **logging:** enable Winston console transport in production for Docker logs ([6772b9d](https://github.com/guilhermejansen/whatsapp-flows-server/commit/6772b9d774f38d15e3bd6e37187032c3a2278df5))
+* **swagger:** use compiled .js files in production for swagger-jsdoc ([db73fae](https://github.com/guilhermejansen/whatsapp-flows-server/commit/db73faed034ed24376c044b398138e957198351f))
+
 ## [1.1.6](https://github.com/guilhermejansen/whatsapp-flows-server/releases/tag/v1.1.6) (2025-10-30)
 
 ### 📦 Release Assets
