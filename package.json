@@ -86,7 +86,7 @@
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "conventional-changelog-conventionalcommits": "^9.1.0",
-    "eslint": "^9.38.0",
+    "eslint": "^9.39.1",
     "husky": "^9.1.7",
     "prettier": "^3.6.2",
     "semantic-release": "^25.0.1",
