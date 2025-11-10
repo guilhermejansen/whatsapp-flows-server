@@ -51,7 +51,7 @@ jobs:
             org.opencontainers.image.version=${{ github.event.inputs.version_tag }}
 
       - name: Build and push multi-arch Docker image (NO CACHE)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile

@@ -105,7 +105,7 @@ jobs:
             org.opencontainers.image.version=${{ needs.release.outputs.new-release-version }}
 
       - name: Build and push multi-arch Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
