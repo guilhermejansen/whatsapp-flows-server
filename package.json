@@ -78,7 +78,7 @@
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.4",
-    "@types/node": "^24.9.1",
+    "@types/node": "^24.10.0",
     "@types/node-rsa": "^1.1.4",
     "@types/pg": "^8.15.5",
     "@types/swagger-jsdoc": "^6.0.4",
