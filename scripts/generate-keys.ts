@@ -1,97 +1,108 @@
 #!/usr/bin/env tsx
-/**
- * Generate RSA-2048 Key Pair for WhatsApp Flow Encryption
- *
- * Usage: npm run generate-keys
- *
- * This will generate:
- * - private_key.pem (encrypted with passphrase)
- * - public_key.pem
- *
- * IMPORTANT:
- * - Keep private_key.pem SECURE and NEVER commit to Git
- * - Add keys to .env file
- * - Register public key to Meta using register-public-key.ts
- */
+/** Generate an RSA-2048 pair without printing private material. */
+import { generateKeyPairSync } from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as readline from 'node:readline';
+import { Writable } from 'node:stream';
 
-import NodeRSA from 'node-rsa';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as readline from 'readline';
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
-function question(prompt: string): Promise<string> {
-  return new Promise((resolve) => {
-    rl.question(prompt, resolve);
+async function readPassphrase(): Promise<string> {
+  // readline echoes terminal input through its output stream. Mute that stream
+  // while reading the secret, including terminal redraws and cursor movement.
+  const terminal = process.stdin.isTTY === true;
+  const output = new Writable({
+    write(chunk, encoding, callback) {
+      if (!terminal) process.stdout.write(chunk, encoding);
+      callback();
+    },
   });
+  const rl = readline.createInterface({ input: process.stdin, output, terminal });
+  process.stdout.write('Enter passphrase to encrypt private key (press Enter to skip): ');
+  try {
+    return await new Promise<string>((resolve, reject) => {
+      rl.once('close', () =>
+        reject(new Error('Passphrase input closed before a line was received'))
+      );
+      rl.question('', resolve);
+    });
+  } finally {
+    rl.close();
+    if (terminal) process.stdout.write('\n');
+  }
 }
 
-async function generateKeys() {
-  console.log('🔐 Generating RSA-2048 Key Pair for WhatsApp Flows\n');
-
-  // Ask for passphrase
-  const passphrase = await question('Enter passphrase to encrypt private key (press Enter to skip): ');
-
-  console.log('\n⏳ Generating keys...\n');
-
-  // Generate RSA-2048 key pair
-  const key = new NodeRSA({ b: 2048 });
-  key.setOptions({ encryptionScheme: 'pkcs1_oaep' });
-
-  // Export keys
-  let privateKey: string;
-
-  if (passphrase && passphrase.trim()) {
-    // Encrypt private key with passphrase
-    privateKey = key.exportKey('pkcs1-private-pem');
-    console.log('✅ Private key encrypted with passphrase');
-  } else {
-    // Export without encryption
-    privateKey = key.exportKey('pkcs1-private-pem');
-    console.log('⚠️  Private key NOT encrypted (consider using passphrase in production)');
+async function generateKeys(): Promise<void> {
+  const args = process.argv.slice(2);
+  if (args.some((arg) => arg !== '--force')) {
+    throw new Error('Usage: npm run generate-keys -- [--force]');
   }
-
-  const publicKey = key.exportKey('pkcs8-public-pem');
-
-  // Save to files
+  const force = args.includes('--force');
   const keysDir = path.join(process.cwd(), 'keys');
-  if (!fs.existsSync(keysDir)) {
-    fs.mkdirSync(keysDir, { recursive: true });
-  }
-
+  fs.mkdirSync(keysDir, { recursive: true, mode: 0o700 });
+  if (!fs.lstatSync(keysDir).isDirectory()) throw new Error('keys must be a real directory');
   const privateKeyPath = path.join(keysDir, 'private_key.pem');
   const publicKeyPath = path.join(keysDir, 'public_key.pem');
-
-  fs.writeFileSync(privateKeyPath, privateKey, { mode: 0o600 });
-  fs.writeFileSync(publicKeyPath, publicKey, { mode: 0o644 });
-
-  console.log('\n✅ Keys generated successfully!\n');
-  console.log(`📁 Private Key: ${privateKeyPath}`);
-  console.log(`📁 Public Key: ${publicKeyPath}\n`);
-
-  // Show .env format
-  console.log('📋 Add these to your .env file:\n');
-  console.log('PRIVATE_KEY="' + privateKey.replace(/\n/g, '\\n') + '"');
-  if (passphrase && passphrase.trim()) {
-    console.log('PASSPHRASE="' + passphrase + '"');
+  for (const filename of [privateKeyPath, publicKeyPath]) {
+    let stat: fs.Stats;
+    try {
+      stat = fs.lstatSync(filename);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
+      throw error;
+    }
+    if (!force)
+      throw new Error('Key file already exists; use --force only for deliberate key rotation');
+    if (!stat.isFile()) throw new Error('Refusing to replace a non-regular key file');
   }
-  console.log('PUBLIC_KEY="' + publicKey.replace(/\n/g, '\\n') + '"\n');
 
-  // Next steps
-  console.log('📌 Next Steps:');
-  console.log('1. Copy the keys to your .env file');
-  console.log('2. Run "npm run register-key" to register public key with Meta');
-  console.log('3. NEVER commit private_key.pem to Git!\n');
+  const passphrase = await readPassphrase();
+  const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const privatePem =
+    passphrase.length > 0
+      ? privateKey.export({ type: 'pkcs8', format: 'pem', cipher: 'aes-256-cbc', passphrase })
+      : privateKey.export({ type: 'pkcs8', format: 'pem' });
+  const publicPem = publicKey.export({ type: 'spki', format: 'pem' });
 
-  rl.close();
+  // Write new inodes before publishing: --force never follows an old symlink
+  // or preserves an old permissive mode. Each rename is atomic, not the pair.
+  const staging = fs.mkdtempSync(path.join(keysDir, '.key-pair-'));
+  let privateCreated = false;
+  try {
+    const stagedPrivate = path.join(staging, 'private.pem');
+    const stagedPublic = path.join(staging, 'public.pem');
+    fs.writeFileSync(stagedPrivate, privatePem, { mode: 0o600, flag: 'wx' });
+    fs.chmodSync(stagedPrivate, 0o600);
+    fs.writeFileSync(stagedPublic, publicPem, { mode: 0o644, flag: 'wx' });
+    if (force) {
+      fs.renameSync(stagedPrivate, privateKeyPath);
+      fs.renameSync(stagedPublic, publicKeyPath);
+    } else {
+      // Hard links fail with EEXIST even if a file appeared after preflight.
+      fs.linkSync(stagedPrivate, privateKeyPath);
+      privateCreated = true;
+      fs.linkSync(stagedPublic, publicKeyPath);
+    }
+  } catch (error) {
+    if (privateCreated) fs.unlinkSync(privateKeyPath);
+    throw error;
+  } finally {
+    fs.rmSync(staging, { recursive: true, force: true });
+  }
+
+  console.log(
+    passphrase.length > 0
+      ? '\nPrivate key encrypted (PKCS#8 / AES-256-CBC).'
+      : '\nPrivate key is NOT encrypted.'
+  );
+  console.log(`Private key saved to: ${privateKeyPath}`);
+  console.log(`Public key saved to: ${publicKeyPath}`);
+  console.log(publicPem.toString());
+  console.log(
+    'Keep the private file and passphrase secret; configure PRIVATE_KEY and PASSPHRASE securely.'
+  );
 }
 
-generateKeys().catch((error) => {
-  console.error('❌ Error generating keys:', error);
-  rl.close();
-  process.exit(1);
+generateKeys().catch((error: unknown) => {
+  console.error('Key generation failed:', error instanceof Error ? error.message : 'Unknown error');
+  process.exitCode = 1;
 });
