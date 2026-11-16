@@ -39,6 +39,15 @@ export default [
     },
   },
   {
+    files: ['scripts/generate-keys.ts', 'scripts/validate-keys.ts', 'scripts/security.test.ts'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
+    },
+    plugins: { '@typescript-eslint': tsPlugin },
+    rules: { ...tsPlugin.configs.recommended.rules },
+  },
+  {
     ignores: ['dist/**', 'node_modules/**', '**/*.js'],
   },
 ];

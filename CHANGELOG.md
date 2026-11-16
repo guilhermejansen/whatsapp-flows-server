@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Security
+
+- Encrypt generated private keys as PKCS#8/AES-256-CBC when a passphrase is supplied; never print private keys or passphrases, hide terminal entry, enforce mode 0600 and require `--force` to replace existing files.
+- Fail key validation when remote registration cannot be proven; support encrypted private keys and avoid logging request credentials.
+
 ## [1.1.8](https://github.com/guilhermejansen/whatsapp-flows-server/releases/tag/v1.1.8) (2025-11-10)
 
 ### 📦 Release Assets

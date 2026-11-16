@@ -22,6 +22,30 @@
 
 ---
 
+
+## Key generation and validation
+
+Run `npm run generate-keys` from the project directory. A nonempty passphrase
+produces a genuinely encrypted PKCS#8 private key using AES-256-CBC. An empty
+passphrase deliberately produces an unencrypted key. Terminal input is hidden;
+the script never prints the private PEM or passphrase. It prints the public key
+and file paths only. The private file is written with mode `0600`.
+
+Existing `keys/private_key.pem` or `keys/public_key.pem` cause a failure by default.
+For deliberate rotation, back up the current pair securely and use
+`npm run generate-keys -- --force`. Each file replacement is atomic, but the pair
+is not a transaction: keep the service stopped during rotation and verify the
+pair before restarting. Do not run concurrent key generation processes.
+
+Load the private file into `PRIVATE_KEY` through your secret configuration and set
+`PASSPHRASE` to the same value when encryption was selected. Never paste secrets
+into logs or commit them. The server and validator accept encrypted PKCS#8 keys.
+
+`npm run validate-keys` exits zero only after it verifies local encryption/decryption
+and receives the same public key from Meta. Missing credentials, absent/invalid
+remote keys, mismatches, HTTP errors and timeouts exit nonzero. A locally valid
+pair alone does not prove registration or a live WhatsApp exchange.
+
 ## 📖 Overview
 
 WhatsApp Flow Server is a **robust, production-ready TypeScript server** that implements the [WhatsApp Flows API](https://developers.facebook.com/docs/whatsapp/flows/) using **Domain-Driven Design (DDD)** principles. It provides a complete solution for handling WhatsApp Flow interactions with built-in encryption, webhook processing, and comprehensive CI/CD automation.

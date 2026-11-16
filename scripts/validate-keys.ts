@@ -1,143 +1,71 @@
 #!/usr/bin/env tsx
-/**
- * Validate RSA Key Pair Matching
- *
- * Verifies that:
- * 1. Private and public keys match
- * 2. Keys can encrypt/decrypt correctly
- * 3. Public key registered in Meta matches local key
- *
- * Usage: npx tsx scripts/validate-keys.ts
- */
-
-import NodeRSA from 'node-rsa';
+/** Exit zero only when local pairing AND remote key equality are verified. */
 import axios from 'axios';
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
 import * as dotenv from 'dotenv';
-import * as path from 'path';
+import * as path from 'node:path';
 
-dotenv.config({ path: path.join(process.cwd(), '.env') });
+dotenv.config({ path: path.join(process.cwd(), '.env'), quiet: true });
 
-async function validateKeys() {
-  console.log('🔍 Validating RSA Key Pair\n');
+class ValidationError extends Error {}
 
-  // 1. Load keys
+async function validateKeys(): Promise<void> {
   const privateKeyRaw = process.env.PRIVATE_KEY;
   const publicKeyRaw = process.env.PUBLIC_KEY;
   const accessToken = process.env.META_ACCESS_TOKEN;
   const phoneNumberId = process.env.META_PHONE_NUMBER_ID;
+  if (!privateKeyRaw || !publicKeyRaw) throw new ValidationError('Local keys are not configured');
 
-  if (!privateKeyRaw || !publicKeyRaw) {
-    console.error('❌ Keys not found in .env');
-    process.exit(1);
-  }
+  const privateKey = crypto.createPrivateKey({
+    key: privateKeyRaw.replace(/\\n/g, '\n'),
+    passphrase: process.env.PASSPHRASE,
+  });
+  const publicKey = crypto.createPublicKey(publicKeyRaw.replace(/\\n/g, '\n'));
+  const testData = crypto.randomBytes(32);
+  const encrypted = crypto.publicEncrypt({ key: publicKey, oaepHash: 'sha256' }, testData);
+  const decrypted = crypto.privateDecrypt({ key: privateKey, oaepHash: 'sha256' }, encrypted);
+  if (!testData.equals(decrypted)) throw new ValidationError('Local key pair does not match');
+  console.log('Local key pair verified.');
 
-  const privateKey = privateKeyRaw.replace(/\\n/g, '\n');
-  const publicKey = publicKeyRaw.replace(/\\n/g, '\n');
-
-  console.log('📋 Step 1: Validate key pair matching...');
-
-  // 2. Import keys
-  const privateRsa = new NodeRSA();
-  try {
-    privateRsa.importKey(privateKey, 'pkcs1-private-pem');
-  } catch {
-    privateRsa.importKey(privateKey, 'pkcs8-private-pem');
-  }
-  privateRsa.setOptions({ encryptionScheme: 'pkcs1_oaep' });
-
-  const publicRsa = new NodeRSA();
-  publicRsa.importKey(publicKey, 'pkcs8-public-pem');
-  publicRsa.setOptions({ encryptionScheme: 'pkcs1_oaep' });
-
-  // 3. Test encryption/decryption
-  try {
-    const testData = crypto.randomBytes(32);
-    const encrypted = publicRsa.encrypt(testData);
-    const decrypted = privateRsa.decrypt(encrypted);
-
-    if (Buffer.compare(testData, decrypted) === 0) {
-      console.log('✅ Private and public keys MATCH');
-      console.log('   Encryption test passed\n');
-    } else {
-      console.error('❌ Keys do NOT match!');
-      console.error('   Private key cannot decrypt what public key encrypted');
-      process.exit(1);
-    }
-  } catch (error) {
-    console.error('❌ Encryption test FAILED:', error);
-    console.error('   Keys are incompatible');
-    process.exit(1);
-  }
-
-  // 4. Check registered key in Meta
   if (!accessToken || !phoneNumberId) {
-    console.log('⚠️  Step 2: Skipping Meta validation (credentials not configured)');
-    console.log('\n✅ Local key pair is valid');
-    console.log('🔑 Next step: Register public key with Meta');
-    console.log('   Run: npm run register-key\n');
-    return;
+    throw new ValidationError('Meta registration UNVERIFIED: credentials are not configured');
   }
-
-  console.log('📋 Step 2: Checking registered key in Meta...');
-
+  let data: { business_public_key?: unknown; public_key?: unknown };
   try {
-    const url = `https://graph.facebook.com/v18.0/${phoneNumberId}/whatsapp_business_encryption`;
+    const url = `https://graph.facebook.com/v18.0/${encodeURIComponent(phoneNumberId)}/whatsapp_business_encryption`;
     const response = await axios.get(url, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
+      timeout: 10000,
+      maxRedirects: 0,
     });
-
-    console.log('   API Response:', JSON.stringify(response.data, null, 2));
-
-    const registeredKey = response.data.business_public_key || response.data.public_key;
-
-    if (!registeredKey) {
-      console.log('⚠️  No public key found in API response');
-      console.log('   Response data:', response.data);
-      console.log('\n💡 The key may have been registered but the API is not returning it.');
-      console.log('   This can happen due to:');
-      console.log('   - Propagation delay (wait 1-2 minutes)');
-      console.log('   - API permissions issue');
-      console.log('   - Wrong phone number ID\n');
-      console.log('✅ Local key pair is valid');
-      console.log('🔑 Key was successfully registered');
-      console.log('🧪 Try testing the endpoint in WhatsApp Manager now\n');
-      return;
-    }
-
-    // Compare keys (normalize whitespace)
-    const localKeyNormalized = publicKey.replace(/\s+/g, '');
-    const registeredKeyNormalized = registeredKey.replace(/\s+/g, '');
-
-    if (localKeyNormalized === registeredKeyNormalized) {
-      console.log('✅ Registered key in Meta MATCHES local public key\n');
-      console.log('🎉 All validations passed!');
-      console.log('✅ Your setup is correct');
-      console.log('✅ Ready to process WhatsApp Flow requests\n');
-    } else {
-      console.log('❌ Registered key in Meta DOES NOT MATCH local key!\n');
-      console.log('📝 Local public key (first 100 chars):');
-      console.log('   ' + publicKey.substring(0, 100) + '...\n');
-      console.log('📝 Registered key (first 100 chars):');
-      console.log('   ' + registeredKey.substring(0, 100) + '...\n');
-      console.log('🔧 SOLUTION: Re-register the correct public key');
-      console.log('   Run: npm run register-key\n');
-      process.exit(1);
-    }
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error('❌ Failed to check Meta registration:', error.response?.data);
-    } else {
-      console.error('❌ Error:', error);
-    }
-    console.log('\n⚠️  Could not verify Meta registration');
-    console.log('🔑 To register your public key, run: npm run register-key\n');
+    data = response.data;
+  } catch {
+    // Axios errors may include Authorization headers. Never dump the error.
+    throw new ValidationError('Meta registration UNVERIFIED: HTTP request failed');
   }
+  const registeredKey = data?.business_public_key || data?.public_key;
+  if (typeof registeredKey !== 'string' || !registeredKey.trim()) {
+    throw new ValidationError('Meta registration UNVERIFIED: response contains no public key');
+  }
+  let registeredDer: Buffer;
+  try {
+    registeredDer = crypto.createPublicKey(registeredKey).export({ type: 'spki', format: 'der' });
+  } catch {
+    throw new ValidationError('Meta registration UNVERIFIED: invalid public key in response');
+  }
+  const localDer = publicKey.export({ type: 'spki', format: 'der' });
+  if (!localDer.equals(registeredDer))
+    throw new ValidationError('Registered Meta public key DOES NOT MATCH local key');
+  console.log('Registered key in Meta MATCHES local public key. All key validations passed.');
 }
 
-validateKeys().catch((error) => {
-  console.error('❌ Validation failed:', error);
-  process.exit(1);
+validateKeys().catch((error: unknown) => {
+  // Do not serialize key parsing errors or request objects containing secrets.
+  console.error(
+    'Key validation failed:',
+    error instanceof ValidationError
+      ? error.message
+      : 'Local key pair could not be loaded or verified.'
+  );
+  process.exitCode = 1;
 });
