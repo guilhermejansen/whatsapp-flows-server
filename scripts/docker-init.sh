@@ -58,24 +58,51 @@ check_prerequisites() {
     print_success "npm is installed"
 }
 
+# Never invite secret entry until the regular .env file has private permissions.
+protect_environment() {
+    if [ -L .env ] || [ ! -f .env ]; then
+        print_error "Refusing non-regular or symlink .env; no services were started"
+        return 1
+    fi
+    if ! chmod 600 .env; then
+        print_error "Cannot secure .env permissions to 0600; refusing to continue or start Docker"
+        return 1
+    fi
+}
+
 # Setup environment
 setup_environment() {
     print_header "Setting up Environment"
 
-    if [ -f ".env" ]; then
-        print_warning ".env file already exists"
+    if [ -e .env ] || [ -L .env ]; then
+        print_warning ".env already exists; restricting permissions to 0600 before configuration"
+        if ! protect_environment; then
+            return 1
+        fi
         read -p "Do you want to overwrite it? (y/n) " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            cp .env.docker.example .env
+            if ! cp .env.docker.example .env; then
+                print_error "Cannot copy environment template; no services were started"
+                return 1
+            fi
             print_success "Created new .env from .env.docker.example"
         fi
     else
-        cp .env.docker.example .env
-        print_success "Created .env from .env.docker.example"
+        # Private from its first byte; noclobber also refuses a destination that
+        # appears concurrently instead of following/replacing it automatically.
+        if ! (umask 077; set -o noclobber; cat .env.docker.example > .env); then
+            print_error "Cannot create private .env; no services were started"
+            return 1
+        fi
+        print_success "Created .env from .env.docker.example with private permissions"
     fi
 
-    # Prompt for sensitive configuration
+    if ! protect_environment; then
+        return 1
+    fi
+
+    # Prompt for sensitive configuration only after mode 0600 is enforced.
     print_info "Please update the following in .env:"
     echo "  - DB_PASSWORD (database password)"
     echo "  - PRIVATE_KEY (RSA private key)"
@@ -88,7 +115,14 @@ setup_environment() {
     read -p "Do you want to edit .env now? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        ${EDITOR:-nano} .env
+        if ! ${EDITOR:-nano} .env; then
+            print_error "Environment editor failed; no services were started"
+            return 1
+        fi
+    fi
+    # Editors may replace the inode when saving; enforce the mode again.
+    if ! protect_environment; then
+        return 1
     fi
 }
 

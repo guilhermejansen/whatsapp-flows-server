@@ -65,6 +65,14 @@ The distributed environment templates leave PRIVATE_KEY/PUBLIC_KEY/PASSPHRASE
 empty; commented examples do not count as configuration. The script never imports
 secrets into `.env` automatically or forces key rotation.
 
+Before inviting any secret entry, the bootstrap creates `.env` with mode `0600`
+even under `umask 022`, or restricts an existing regular file to `0600` with a
+notice. It checks that protection succeeded before opening the editor and again
+after editing. Failure to apply `chmod` stops with an error before Docker;
+symlink or non-regular `.env` paths are refused without changing their targets.
+Contents are preserved unless you explicitly choose to overwrite the template.
+These are POSIX mode protections; the script does not configure filesystem ACLs.
+
 ## 📖 Overview
 
 WhatsApp Flow Server is a **robust, production-ready TypeScript server** that implements the [WhatsApp Flows API](https://developers.facebook.com/docs/whatsapp/flows/) using **Domain-Driven Design (DDD)** principles. It provides a complete solution for handling WhatsApp Flow interactions with built-in encryption, webhook processing, and comprehensive CI/CD automation.

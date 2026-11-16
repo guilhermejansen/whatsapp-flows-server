@@ -18,6 +18,7 @@ const scriptPath = path.resolve(__dirname, 'docker-init.sh');
 const emptyConfiguration = 'PRIVATE_KEY=""\nPUBLIC_KEY=""\n';
 const privateMarker = 'format-only-private-file-sentinel';
 const publicMarker = 'format-only-public-file-sentinel';
+const editorMarker = 'fictional-editor-input';
 
 type KeyLayout =
   | 'absent'
@@ -29,6 +30,8 @@ type KeyLayout =
   | 'private-symlink'
   | 'not-directory';
 type StubGeneration = 'refuse' | 'generate' | 'fail';
+type StubEditor = 'reject' | 'import' | 'replace-permissive';
+type StubChmod = 'allow' | 'fail' | 'fail-after-editor';
 type Fixture = { cwd: string; bin: string; eventsPath: string; cleanup: () => void };
 type ShellResult = { status: number; output: string; events: string[] };
 
@@ -103,11 +106,43 @@ case "\${0##*/}" in
     ;;
   curl) event curl-stub ;;
   sleep) event sleep-stub ;;
-  nano) event editor-stub; exit 91 ;;
+  chmod)
+    event chmod-attempt
+    if [[ "$TEST_CHMOD" == fail ]] || \\
+       { [[ "$TEST_CHMOD" == fail-after-editor ]] && grep -q '^editor-import$' "$TEST_EVENTS"; }; then
+      event chmod-denied
+      exit 71
+    fi
+    if /bin/chmod "$@" 2>/dev/null; then
+      event chmod-allowed
+    else
+      event chmod-real-failure
+      exit 72
+    fi
+    ;;
+  nano)
+    event editor-stub
+    if [[ "$TEST_EDITOR" == reject ]]; then exit 91; fi
+    "$TEST_NODE" -e '
+const fs = require("node:fs");
+const mode = fs.statSync(".env").mode & 0o777;
+fs.appendFileSync(process.env.TEST_EVENTS, mode === 0o600 ? "editor-private\\n" : "editor-permissive\\n");
+const suffix = "\\nTEST_FAKE_SECRET=${editorMarker}\\n";
+if (process.env.TEST_EDITOR === "replace-permissive") {
+  const bytes = Buffer.concat([fs.readFileSync(".env"), Buffer.from(suffix)]);
+  fs.writeFileSync(".env.editor-replacement", bytes, { mode: 0o644 });
+  fs.chmodSync(".env.editor-replacement", 0o644);
+  fs.renameSync(".env.editor-replacement", ".env");
+} else {
+  fs.appendFileSync(".env", suffix);
+}
+fs.appendFileSync(process.env.TEST_EVENTS, "editor-import\\n");
+'
+    ;;
   *) event unexpected-command; exit 91 ;;
 esac
 `;
-  for (const command of ['docker', 'docker-compose', 'npm', 'curl', 'sleep', 'nano']) {
+  for (const command of ['docker', 'docker-compose', 'npm', 'curl', 'sleep', 'nano', 'chmod']) {
     fs.writeFileSync(path.join(bin, command), stub, { mode: 0o700 });
   }
   return { cwd, bin, eventsPath, cleanup: () => fs.rmSync(cwd, { recursive: true, force: true }) };
@@ -146,6 +181,7 @@ function snapshotConfiguration(fixture: Fixture): string {
     '.env.docker.example',
     'keys',
     'existing-key-source',
+    'existing-env-source',
   ])
     visit(relative);
   return JSON.stringify(entries);
@@ -153,18 +189,31 @@ function snapshotConfiguration(fixture: Fixture): string {
 
 function runShell(
   fixture: Fixture,
-  options: { input?: string; generation?: StubGeneration; sourceOnly?: boolean } = {}
+  options: {
+    input?: string;
+    generation?: StubGeneration;
+    sourceOnly?: boolean;
+    editor?: StubEditor;
+    chmod?: StubChmod;
+  } = {}
 ): ShellResult {
   const args = ['--noprofile', '--norc'];
   if (options.sourceOnly) {
     args.push(
       '-c',
-      'source "$1"; printf "source-returned\\n" >> "$TEST_EVENTS"',
+      'umask 022; source "$1"; printf "source-returned\\n" >> "$TEST_EVENTS"',
       'source-test',
       scriptPath
     );
   } else {
-    args.push(scriptPath);
+    // Set the caller's umask explicitly, then execute the real entry point.
+    // No application function is sourced, replaced or reconstructed here.
+    args.push(
+      '-c',
+      'umask 022; exec /bin/bash --noprofile --norc "$1"',
+      'bootstrap-test',
+      scriptPath
+    );
   }
   const child = spawnSync('/bin/bash', args, {
     cwd: fixture.cwd,
@@ -177,6 +226,9 @@ function runShell(
       EDITOR: 'nano',
       TEST_EVENTS: fixture.eventsPath,
       TEST_GENERATION: options.generation ?? 'refuse',
+      TEST_EDITOR: options.editor ?? 'reject',
+      TEST_CHMOD: options.chmod ?? 'allow',
+      TEST_NODE: process.execPath,
     },
     input: options.input ?? 'nny',
     encoding: 'utf8',
@@ -192,6 +244,7 @@ function runShell(
     'bootstrap must not print private key headers'
   );
   assert.ok(!output.includes(privateMarker), 'bootstrap must not print private file contents');
+  assert.ok(!output.includes(editorMarker), 'bootstrap must not print imported fixture values');
   const events = fs.existsSync(fixture.eventsPath)
     ? fs.readFileSync(fixture.eventsPath, 'utf8').trim().split('\n')
     : [];
@@ -470,6 +523,238 @@ for (const reply of ['n', ''] as const) {
       assert.ok(
         !fs.existsSync(path.join(fixture.cwd, 'keys')),
         'decline or EOF must not create key files'
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  });
+}
+
+function prepareNewEnv(fixture: Fixture): Buffer {
+  fs.rmSync(path.join(fixture.cwd, '.env'));
+  fs.rmSync(path.join(fixture.cwd, '.env.docker'));
+  const source = path.resolve(__dirname, '..', '.env.docker.example');
+  const destination = path.join(fixture.cwd, '.env.docker.example');
+  fs.copyFileSync(source, destination);
+  // Model the actual distributed 0644 template even on a restrictive QA host.
+  fs.chmodSync(destination, 0o644);
+  return fs.readFileSync(source);
+}
+
+function assertPrivateEditorImport(result: ShellResult): void {
+  assert.equal(
+    result.events.filter((event) => event === 'editor-stub').length,
+    1,
+    'test must actually reach the external editor once'
+  );
+  assert.equal(
+    result.events.filter((event) => event === 'editor-private').length,
+    1,
+    '.env must already be 0600 when the editor observes it'
+  );
+  assert.ok(
+    !result.events.includes('editor-permissive'),
+    'editor must never receive a permissive .env'
+  );
+  assert.equal(
+    result.events.filter((event) => event === 'editor-import').length,
+    1,
+    'editor stub must import its fictional value after observing permissions'
+  );
+}
+
+function assertProtectionError(result: ShellResult, beforeEditor = true): void {
+  assert.equal(result.status, 1, 'failure to protect .env must return a controlled error 1');
+  assertNoServiceStart(result);
+  assert.ok(
+    !result.events.includes('npm-generate'),
+    'protection failure must not reach generation'
+  );
+  assert.ok(
+    /permi|protect|chmod|0600|600/i.test(result.output),
+    'protection failure must explain the permission problem'
+  );
+  if (beforeEditor) {
+    assert.ok(
+      !result.events.includes('editor-stub') && !result.events.includes('editor-import'),
+      'protection failure must stop before editor or secret import'
+    );
+    assert.ok(
+      !/Please update the following/i.test(result.output),
+      'protection failure must precede instructions to import secrets'
+    );
+  }
+}
+
+test('docker-init: new .env under umask 022 is 0600 before editor import and at completion', () => {
+  const fixture = createFixture();
+  try {
+    const template = prepareNewEnv(fixture);
+    const result = runShell(fixture, { input: 'yn', editor: 'import' });
+    assertPending(result);
+    assertPrivateEditorImport(result);
+    assert.equal(
+      fs.statSync(path.join(fixture.cwd, '.env')).mode & 0o777,
+      0o600,
+      'new .env must remain private after editing'
+    );
+    const expected = Buffer.concat([template, Buffer.from(`\nTEST_FAKE_SECRET=${editorMarker}\n`)]);
+    assert.ok(
+      fs.readFileSync(path.join(fixture.cwd, '.env')).equals(expected),
+      'new configuration must retain template bytes and only the fictional editor input'
+    );
+    assert.ok(
+      fs.readFileSync(path.join(fixture.cwd, '.env.docker.example')).equals(template),
+      'source template must not change'
+    );
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('docker-init: existing 0644 .env is warned about and protected before editor import', () => {
+  const fixture = createFixture();
+  try {
+    const filename = path.join(fixture.cwd, '.env');
+    const original = fs.readFileSync(filename);
+    fs.chmodSync(filename, 0o644);
+    const result = runShell(fixture, { input: 'nyn', editor: 'import' });
+    assertPending(result);
+    assertPrivateEditorImport(result);
+    assert.equal(
+      fs.statSync(filename).mode & 0o777,
+      0o600,
+      'permissive existing .env must be corrected'
+    );
+    assert.ok(
+      /warn|⚠/i.test(result.output) && /0600|600|permi|protect/i.test(result.output),
+      'bootstrap must warn that existing file protection was applied'
+    );
+    const expected = Buffer.concat([original, Buffer.from(`\nTEST_FAKE_SECRET=${editorMarker}\n`)]);
+    assert.ok(
+      fs.readFileSync(filename).equals(expected),
+      'permission repair must preserve existing content'
+    );
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('docker-init: editor replacement with mode 0644 is protected again before continuing', () => {
+  const fixture = createFixture();
+  try {
+    const original = fs.readFileSync(path.join(fixture.cwd, '.env'));
+    const result = runShell(fixture, { input: 'nyn', editor: 'replace-permissive' });
+    assertPending(result);
+    assertPrivateEditorImport(result);
+    assert.equal(
+      fs.statSync(path.join(fixture.cwd, '.env')).mode & 0o777,
+      0o600,
+      'replacement inode must be protected after editor exits'
+    );
+    const expected = Buffer.concat([original, Buffer.from(`\nTEST_FAKE_SECRET=${editorMarker}\n`)]);
+    assert.ok(
+      fs.readFileSync(path.join(fixture.cwd, '.env')).equals(expected),
+      'post-edit protection must preserve the edited bytes'
+    );
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+for (const kind of ['new', 'existing'] as const) {
+  test(`docker-init: ${kind} .env chmod failure stops before editor, import or Docker`, () => {
+    const fixture = createFixture();
+    try {
+      const filename = path.join(fixture.cwd, '.env');
+      let original: Buffer;
+      if (kind === 'new') {
+        original = prepareNewEnv(fixture);
+      } else {
+        original = fs.readFileSync(filename);
+        fs.chmodSync(filename, 0o644);
+      }
+      const result = runShell(fixture, {
+        input: kind === 'new' ? 'yn' : 'nyn',
+        editor: 'import',
+        chmod: 'fail',
+      });
+      assertProtectionError(result);
+      assert.ok(
+        result.events.includes('chmod-denied'),
+        'failure injection must actually reach the chmod command'
+      );
+      assert.ok(
+        fs.existsSync(filename) && fs.readFileSync(filename).equals(original),
+        'failed protection must preserve configuration bytes without importing a value'
+      );
+      assert.ok(
+        !fs.existsSync(path.join(fixture.cwd, 'keys')),
+        'permission failure must not create key storage'
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  });
+}
+
+test('docker-init: protection failure after editor replacement stops before Docker', () => {
+  const fixture = createFixture();
+  try {
+    const result = runShell(fixture, {
+      input: 'nyn',
+      editor: 'replace-permissive',
+      chmod: 'fail-after-editor',
+    });
+    assertProtectionError(result, false);
+    assertPrivateEditorImport(result);
+    assert.ok(
+      result.events.includes('chmod-denied'),
+      'post-edit protection failure must be observed'
+    );
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+for (const kind of ['symlink', 'dangling-symlink', 'directory'] as const) {
+  test(`docker-init: .env ${kind} is rejected without chmoding a target or invoking editor`, () => {
+    const fixture = createFixture();
+    try {
+      const filename = path.join(fixture.cwd, '.env');
+      fs.rmSync(filename);
+      if (kind === 'directory') {
+        fs.mkdirSync(filename);
+      } else {
+        if (kind === 'symlink') {
+          fs.writeFileSync(path.join(fixture.cwd, 'existing-env-source'), emptyConfiguration, {
+            mode: 0o644,
+          });
+          fs.chmodSync(path.join(fixture.cwd, 'existing-env-source'), 0o644);
+        }
+        // Target remains in this test's directory. No operator path is touched.
+        fs.symlinkSync('existing-env-source', filename);
+      }
+      const before = snapshotConfiguration(fixture);
+      const result = runShell(fixture, { input: 'nyn', editor: 'import' });
+      assert.equal(result.status, 1, 'non-regular .env must be rejected explicitly');
+      assertNoServiceStart(result);
+      assert.ok(
+        !result.events.includes('chmod-attempt'),
+        'unsafe .env must be rejected before any chmod follows it'
+      );
+      assert.ok(
+        !result.events.includes('editor-stub') && !result.events.includes('npm-generate'),
+        'unsafe .env must not reach editor or generation'
+      );
+      assert.ok(
+        snapshotConfiguration(fixture) === before,
+        'refusal must preserve link, target, permissions and contents'
+      );
+      assert.ok(
+        /\.env/.test(result.output) &&
+          /refus|regular|symlink|unsafe|error|invalid/i.test(result.output),
+        'refusal must explain the unsafe .env path'
       );
     } finally {
       fixture.cleanup();

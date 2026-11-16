@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Create bootstrap `.env` privately under umask 077, restrict existing files to mode 0600 before secret entry and after editing, and stop before Docker if permission protection fails. Refuse non-regular/symlink paths without following them.
+
 - Leave key/passphrase assignments empty in distributed environment templates so examples cannot be mistaken for configured keys.
 - Preserve configured PKCS#1/PKCS#8 keys in docker-init; pause explicitly before Docker startup when keys still need importing, without automatic overwrite or secret output. Document file-based setup and registration before validation.
 
