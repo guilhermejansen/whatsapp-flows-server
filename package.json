@@ -25,7 +25,7 @@
     "format:check": "prettier --check 'src/**/*.ts'",
     "prepare": "husky || true",
     "commit": "git-cz",
-    "test:security": "node --import tsx --test --test-concurrency=1 scripts/security.test.ts"
+    "test:security": "node --import tsx --test --test-concurrency=1 scripts/security.test.ts scripts/docker-init.test.ts"
   },
   "keywords": [
     "whatsapp",

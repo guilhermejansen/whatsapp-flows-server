@@ -67,12 +67,12 @@ setup_environment() {
         read -p "Do you want to overwrite it? (y/n) " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            cp .env.docker .env
-            print_success "Created new .env from .env.docker"
+            cp .env.docker.example .env
+            print_success "Created new .env from .env.docker.example"
         fi
     else
-        cp .env.docker .env
-        print_success "Created .env from .env.docker"
+        cp .env.docker.example .env
+        print_success "Created .env from .env.docker.example"
     fi
 
     # Prompt for sensitive configuration
@@ -80,6 +80,7 @@ setup_environment() {
     echo "  - DB_PASSWORD (database password)"
     echo "  - PRIVATE_KEY (RSA private key)"
     echo "  - PUBLIC_KEY (RSA public key)"
+    echo "  - PASSPHRASE (same passphrase if private key is encrypted)"
     echo "  - META_* variables (WhatsApp Business Account)"
     echo "  - CALLBACK_WEBHOOK_URL (your webhook URL)"
     echo ""
@@ -91,21 +92,44 @@ setup_environment() {
     fi
 }
 
-# Generate keys if needed
+# Return 2 for a deliberate configuration pause; never overwrite existing keys.
 setup_keys() {
     print_header "Setting up Encryption Keys"
 
-    if grep -q "BEGIN RSA PRIVATE KEY" .env; then
-        print_success "RSA keys already configured"
+    # Inspect only the PRIVATE_KEY assignment, never source or print .env.
+    # This recognizes PEM containers, not cryptographic validity (validate-keys
+    # verifies that after public-key registration).
+    if grep -Eq "^[[:space:]]*(export[[:space:]]+)?PRIVATE_KEY[[:space:]]*=[[:space:]]*['\"]?-----BEGIN (RSA PRIVATE KEY|PRIVATE KEY|ENCRYPTED PRIVATE KEY)-----" .env; then
+        print_success "RSA private key format already configured; preserving existing keys"
+        return 0
+    fi
+
+    print_warning "PRIVATE_KEY is not configured in .env"
+    if { [ -e keys ] || [ -L keys ]; } && { [ ! -d keys ] || [ -L keys ]; }; then
+        print_warning "Existing keys path is not a regular directory; preserving it"
+    elif [ -e keys/private_key.pem ] || [ -L keys/private_key.pem ] || \
+         [ -e keys/public_key.pem ] || [ -L keys/public_key.pem ]; then
+        print_warning "Existing key files found; preserving them without generation or overwrite"
     else
-        print_warning "RSA keys not found in .env"
-        read -p "Generate new RSA keys? (y/n) " -n 1 -r
+        if ! read -p "Generate new RSA keys? (y/n) " -n 1 -r; then
+            echo
+            print_warning "No selection received; configuration is pending"
+            return 2
+        fi
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            npm run generate-keys
-            print_info "Keys generated. Copy them to .env file."
+            if ! npm run generate-keys; then
+                print_error "Key generation failed; no Docker services were started"
+                return 1
+            fi
+            print_info "Keys saved in keys/private_key.pem and keys/public_key.pem"
         fi
     fi
+
+    print_info "Configure PRIVATE_KEY from keys/private_key.pem and PUBLIC_KEY from keys/public_key.pem in .env using a private editor or secret manager"
+    print_info "Use the PEM contents (escaped newlines), not file paths; set PASSPHRASE if encrypted"
+    print_warning "Configuration pending (exit 2). No Docker services started; rerun after configuring, then register-key before validate-keys"
+    return 2
 }
 
 # Build and start services
@@ -225,7 +249,13 @@ main() {
 
     check_prerequisites
     setup_environment
-    setup_keys
+    if setup_keys; then
+        :
+    else
+        local key_status=$?
+        print_warning "Setup paused before Docker startup (exit ${key_status})"
+        return "$key_status"
+    fi
     start_services
     run_migrations
     verify_setup
@@ -236,5 +266,7 @@ main() {
     print_success "Docker services are running and ready"
 }
 
-# Run main function
-main
+# Allow shell tests to source the real functions without starting services.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main "$@"
+fi

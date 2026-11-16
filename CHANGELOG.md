@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Leave key/passphrase assignments empty in distributed environment templates so examples cannot be mistaken for configured keys.
+- Preserve configured PKCS#1/PKCS#8 keys in docker-init; pause explicitly before Docker startup when keys still need importing, without automatic overwrite or secret output. Document file-based setup and registration before validation.
+
 - Encrypt generated private keys as PKCS#8/AES-256-CBC when a passphrase is supplied; never print private keys or passphrases, hide terminal entry, enforce mode 0600 and require `--force` to replace existing files.
 - Fail key validation when remote registration cannot be proven; support encrypted private keys and avoid logging request credentials.
 

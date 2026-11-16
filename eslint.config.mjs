@@ -39,7 +39,12 @@ export default [
     },
   },
   {
-    files: ['scripts/generate-keys.ts', 'scripts/validate-keys.ts', 'scripts/security.test.ts'],
+    files: [
+      'scripts/generate-keys.ts',
+      'scripts/validate-keys.ts',
+      'scripts/security.test.ts',
+      'scripts/docker-init.test.ts',
+    ],
     languageOptions: {
       parser: tsParser,
       parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },

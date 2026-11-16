@@ -37,14 +37,33 @@ For deliberate rotation, back up the current pair securely and use
 is not a transaction: keep the service stopped during rotation and verify the
 pair before restarting. Do not run concurrent key generation processes.
 
-Load the private file into `PRIVATE_KEY` through your secret configuration and set
-`PASSPHRASE` to the same value when encryption was selected. Never paste secrets
+The generated files remain in `keys/private_key.pem` and `keys/public_key.pem`
+under the directory where you ran the command; prefer generating on the host
+before starting containers so they are not lost with an ephemeral container.
+Using a private editor or secret manager, place the **file contents** in the
+`PRIVATE_KEY` and `PUBLIC_KEY` entries of `.env`, with newlines encoded as `\n`.
+These variables accept PEM contents, **not paths**; there is no `PRIVATE_KEY_FILE`
+option. Set `PASSPHRASE` to the exact passphrase when encryption was selected;
+leave it empty for an unencrypted private key. Protect `.env` with mode `0600`.
+Do not use `cat` to display the private file, shell tracing, or terminal output as
+a way to transfer it. The generator intentionally does not print a private key. Never paste secrets
 into logs or commit them. The server and validator accept encrypted PKCS#8 keys.
 
 `npm run validate-keys` exits zero only after it verifies local encryption/decryption
 and receives the same public key from Meta. Missing credentials, absent/invalid
 remote keys, mismatches, HTTP errors and timeouts exit nonzero. A locally valid
 pair alone does not prove registration or a live WhatsApp exchange.
+
+The `scripts/docker-init.sh` bootstrap recognizes configured PKCS#1 and PKCS#8
+private-key headers (encrypted or not) and preserves them. If key files already
+exist but `.env` is not configured, it preserves those files and pauses before
+Docker startup with exit code `2`. Newly generated files also require this
+configuration step before rerunning. Declining generation or EOF returns `2`;
+a generator failure returns `1`; only configured setup continues. This is a
+format check, not cryptographic validation. Configure → register → validate.
+The distributed environment templates leave PRIVATE_KEY/PUBLIC_KEY/PASSPHRASE
+empty; commented examples do not count as configuration. The script never imports
+secrets into `.env` automatically or forces key rotation.
 
 ## 📖 Overview
 
@@ -257,20 +276,22 @@ cd whatsapp-flows-server
 cp .env.docker.example .env
 nano .env  # Edit with your credentials
 
-# 3. Start services
+# 3. Generate keys on the host (requires Node.js/npm)
+npm ci
+npm run generate-keys
+# Configure .env from keys/private_key.pem and keys/public_key.pem using a
+# private editor/secret manager (PEM contents with escaped newlines, not paths).
+# Set PASSPHRASE if encrypted; do not copy terminal output.
+chmod 600 .env
+
+# 4. Register, then validate (these commands do not need the database)
+npm run register-key
+npm run validate-keys
+
+# 5. Start services after configuring the keys
 docker-compose up -d
 
-# 4. Generate encryption keys
-docker-compose exec app npm run generate-keys
-# Copy output to .env
-
-# 5. Restart application
-docker-compose restart app
-
-# 6. Register public key with Meta
-docker-compose exec app npm run register-key
-
-# 7. Verify health
+# 6. Verify health
 curl http://localhost:3000/health
 ```
 
@@ -294,14 +315,17 @@ npm run migrate
 
 # 3. Generate keys
 npm run generate-keys
-# Copy output to .env
+# Files: keys/private_key.pem and keys/public_key.pem (do not print secrets)
 
 # 4. Configure environment
 cp .env.example .env
-nano .env  # Edit with your credentials
+nano .env  # Privately load PEM file contents into PRIVATE_KEY/PUBLIC_KEY;
+           # encode newlines as \n and set PASSPHRASE for encrypted keys.
+chmod 600 .env
 
-# 5. Register public key
+# 5. Register public key, then verify the local pair and remote registration
 npm run register-key
+npm run validate-keys
 
 # 6. Start development server
 npm run dev
@@ -394,18 +418,19 @@ sudo systemctl restart nginx
 #### 3. Start Application
 
 ```bash
-# Start services
+# Generate on the host before startup; configure .env privately from the files
+npm ci
+npm run generate-keys
+# PRIVATE_KEY/PUBLIC_KEY contain PEM contents with escaped newlines, not paths.
+# PASSPHRASE must match the encrypted private key; no secret terminal output.
+chmod 600 .env
+
+# Register first, then validate using .env
+npm run register-key
+npm run validate-keys
+
+# Start services after configuration and verification
 docker-compose up -d
-
-# Generate keys
-docker-compose exec app npm run generate-keys
-# Add keys to .env
-
-# Restart
-docker-compose restart app
-
-# Register public key
-docker-compose exec app npm run register-key
 
 # Verify
 curl https://your-domain.com/health
@@ -463,11 +488,15 @@ docker-compose down
 # Generate RSA-2048 key pair
 npm run generate-keys
 
-# Validate keys
-npm run validate-keys
+# Configure .env privately from keys/private_key.pem and keys/public_key.pem
+# Use PEM contents with escaped newlines, not file paths; set PASSPHRASE if encrypted.
+chmod 600 .env
 
-# Register public key with Meta
+# Register public key with Meta first
 npm run register-key
+
+# Then validate local pairing and remote registration
+npm run validate-keys
 ```
 
 ---
@@ -651,8 +680,8 @@ npm run migrate          # Run migrations
 
 # Encryption
 npm run generate-keys    # Generate RSA keys
-npm run validate-keys    # Validate configuration
 npm run register-key     # Register public key with Meta
+npm run validate-keys    # Validate configuration after registration
 
 # Code Quality
 npm run lint             # Run ESLint
